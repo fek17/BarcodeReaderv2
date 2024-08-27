@@ -1,4 +1,3 @@
-
 """
 *********************************************************
 *                                                       *
@@ -6,19 +5,15 @@
 *  Date: 2024-08-27                                      *
 *                                                       *
 *  Purpose:                                              *
-*  This script is designed to extract barcodes from       *
-*  meat packaging                                          *
-*                                                         *
+*  This script is designed to extract barcodes          *
+*                                                       *
 *  Version: 2.0                                          *
 *                                                       *
 *********************************************************
 """
 
 import os
-import base64
-import requests
 import openpyxl
-import json
 from pyzbar.pyzbar import decode
 from PIL import Image
 
@@ -41,27 +36,27 @@ def extract_barcode(image_path):
     image = Image.open(image_path)
     decoded_objects = decode(image)
     
+    # Define a list of barcode types you're interested in
+    valid_barcode_types = ['EAN13', 'EAN8', 'UPC-A', 'UPC-E', 'CODE128', 'CODE39']
+
     if decoded_objects:
         for obj in decoded_objects:
-            barcode_data = obj.data.decode('utf-8')
-            # You can set the confidence to 'high' here since pyzbar generally returns accurate results
-            return barcode_data, "high"
-    return "No Code Found", "N/A"
+            if obj.type in valid_barcode_types:
+                barcode_data = obj.data.decode('utf-8')
+                return barcode_data
+    return "No valid barcode found"
 
 # Loop through each file in the local folder
 for file_name in os.listdir(folder_path):
     if file_name.lower().endswith((".jpeg", ".jpg", ".png")):  # Process only image files
-        print("Processing "+file_name)
+        print("Processing " + file_name)
         image_path = os.path.join(folder_path, file_name)
         
         # Extract barcode locally
-        extracted_barcode_number, barcode_confidence = extract_barcode(image_path)
+        extracted_barcode_number = extract_barcode(image_path)
         
+        # Append the result to the Excel sheet
         ws.append([file_name, extracted_barcode_number])
-        
-    else:
-        # Handle case where no valid response is received
-        ws.append([file_name, extracted_barcode_number, "No Response", "N/A", "No Response", "N/A"])
 
 # Save the new Excel file
 wb.save(excel_file)
